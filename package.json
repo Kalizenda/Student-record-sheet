@@ -2,7 +2,7 @@
   "name": "student-record-sheet",
   "version": "1.0.0",
   "description": "This project is for recording students",
-  "main": "index.js",
+  "main": "backend/src/index.js",
   "scripts": {
     "start": "node backend/src/index.js",
     "dev": "nodemon backend/src/index.js"
