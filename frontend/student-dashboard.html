@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Student Record System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 24px; }
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid white;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .student-info {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .student-info h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .student-info p {
+            color: #666;
+        }
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .results-table th, .results-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .results-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+        .grade-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .grade-a { background: #e8f5e9; color: #2e7d32; }
+        .grade-b { background: #e3f2fd; color: #1565c0; }
+        .grade-c { background: #fff3e0; color: #e65100; }
+        .grade-d { background: #fce4ec; color: #c62828; }
+        .no-data {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Student Dashboard</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="student-info">
+                <h2>Welcome</h2>
+                <p>Here are your academic results</p>
+            </div>
+            <div id="resultsContainer">
+                <div class="loading">Loading your results...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token || localStorage.getItem('role') !== 'student') {
+            window.location.href = '/student-login';
+        }
+
+        function calculateGrade(score) {
+            if (score >= 70) return { grade: 'A', class: 'grade-a' };
+            if (score >= 60) return { grade: 'B', class: 'grade-b' };
+            if (score >= 50) return { grade: 'C', class: 'grade-c' };
+            return { grade: 'D', class: 'grade-d' };
+        }
+
+        async function loadResults() {
+            const container = document.getElementById('resultsContainer');
+            try {
+                const response = await fetch('/api/v1/students/my-own-result', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    container.innerHTML = `<div class="no-data">${data.message || 'Unable to load results'}</div>`;
+                    return;
+                }
+
+                const result = data.studentResult;
+                if (!result || !result.results || result.results.length === 0) {
+                    container.innerHTML = '<div class="no-data">No results available yet</div>';
+                    return;
+                }
+
+                const studentInfo = document.querySelector('.student-info');
+                if (result.user) {
+                    studentInfo.innerHTML = `
+                        <h2>Welcome, ${result.user.studentName || 'Student'}</h2>
+                        <p>Matric Number: ${result.user.matricNumber || 'N/A'} | Level: ${result.level || 'N/A'}</p>
+                    `;
+                } else {
+                    studentInfo.innerHTML = `
+                        <h2>Welcome</h2>
+                        <p>Level: ${result.level || 'N/A'}</p>
+                    `;
+                }
+
+                let html = `<table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Score</th>
+                            <th>Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+                result.results.forEach(subject => {
+                    const gradeInfo = calculateGrade(subject.score);
+                    html += `<tr>
+                        <td>${subject.name}</td>
+                        <td>${subject.score}</td>
+                        <td><span class="grade-badge ${gradeInfo.class}">${gradeInfo.grade}</span></td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = '<div class="no-data">Error loading results</div>';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            window.location.href = '/';
+        }
+
+        loadResults();
+    </script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Student Record System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 24px; }
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid white;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group.full-width {
+            grid-column: 1 / -1;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover { transform: translateY(-2px); }
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .error { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+        .success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+        .no-data {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+        }
+        .score-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Admin Dashboard</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="container">
+        <!-- Create User Section -->
+        <div class="card">
+            <h2>Create Student User</h2>
+            <div id="createMessage" class="message"></div>
+            <form id="createUserForm">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="studentName">Student Name</label>
+                        <input type="text" id="studentName" placeholder="Enter student name" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="matricNumber">Matric Number</label>
+                        <input type="text" id="matricNumber" placeholder="Enter matric number" required>
+                    </div>
+                </div>
+                <button type="submit">Create User</button>
+            </form>
+        </div>
+
+        <!-- Add Result Section -->
+        <div class="card">
+            <h2>Add Student Result</h2>
+            <div id="resultMessage" class="message"></div>
+            <form id="addResultForm">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="resultMatric">Matric Number</label>
+                        <input type="text" id="resultMatric" placeholder="Enter matric number" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="level">Level</label>
+                        <input type="text" id="level" placeholder="e.g. 100" required>
+                    </div>
+                    <div class="input-group full-width">
+                        <label>Subject Scores</label>
+                        <div class="score-inputs">
+                            <input type="number" id="metaphysics" placeholder="Metaphysics" min="0" max="100">
+                            <input type="number" id="epistemology" placeholder="Epistemology" min="0" max="100">
+                            <input type="number" id="psychology" placeholder="Psychology" min="0" max="100">
+                        </div>
+                    </div>
+                </div>
+                <button type="submit">Submit Result</button>
+            </form>
+        </div>
+
+        <!-- View All Students -->
+        <div class="card">
+            <h2>All Students Results</h2>
+            <button onclick="loadStudents()" style="margin-bottom: 20px;">Refresh Data</button>
+            <div id="studentsTable"></div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token || localStorage.getItem('role') !== 'admin') {
+            window.location.href = '/admin-login';
+        }
+
+        function showMessage(elementId, type, text) {
+            const el = document.getElementById(elementId);
+            el.className = `message ${type}`;
+            el.textContent = text;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        // Create User
+        document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const studentName = document.getElementById('studentName').value;
+            const matricNumber = document.getElementById('matricNumber').value;
+
+            try {
+                const response = await fetch('/api/v1/auth/admin/create-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ studentName, matricNumber })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('createMessage', 'success', 'User created successfully!');
+                    document.getElementById('createUserForm').reset();
+                } else {
+                    showMessage('createMessage', 'error', data.message || 'Failed to create user');
+                }
+            } catch (error) {
+                showMessage('createMessage', 'error', 'Network error');
+            }
+        });
+
+        // Add Result
+        document.getElementById('addResultForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const matricNumber = document.getElementById('resultMatric').value;
+            const level = document.getElementById('level').value;
+            const metaphysics = document.getElementById('metaphysics').value;
+            const epistemology = document.getElementById('epistemology').value;
+            const psychology = document.getElementById('psychology').value;
+
+            const results = [];
+            if (metaphysics) results.push({ name: 'Metaphysics', score: parseInt(metaphysics) });
+            if (epistemology) results.push({ name: 'Epistemology', score: parseInt(epistemology) });
+            if (psychology) results.push({ name: 'Psychology', score: parseInt(psychology) });
+
+            try {
+                const response = await fetch('/api/v1/students/admin-add-result', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ matricNumber, level, results })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('resultMessage', 'success', 'Result submitted successfully!');
+                    document.getElementById('addResultForm').reset();
+                    loadStudents();
+                } else {
+                    showMessage('resultMessage', 'error', data.message || 'Failed to submit result');
+                }
+            } catch (error) {
+                showMessage('resultMessage', 'error', 'Network error');
+            }
+        });
+
+        // Load Students
+        async function loadStudents() {
+            try {
+                const response = await fetch('/api/v1/students/allstudents', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                const tableDiv = document.getElementById('studentsTable');
+                if (!data.allstudents || data.allstudents.length === 0) {
+                    tableDiv.innerHTML = '<div class="no-data">No students found</div>';
+                    return;
+                }
+
+                let html = `<table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Matric Number</th>
+                            <th>Level</th>
+                            <th>Metaphysics</th>
+                            <th>Epistemology</th>
+                            <th>Psychology</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+                data.allstudents.forEach(student => {
+                    const user = student.user || {};
+                    const results = student.results || [];
+                    const getScore = (name) => {
+                        const r = results.find(r => r.name === name);
+                        return r ? r.score : '-';
+                    };
+
+                    html += `<tr>
+                        <td>${user.studentName || 'N/A'}</td>
+                        <td>${user.matricNumber || 'N/A'}</td>
+                        <td>${student.level || 'N/A'}</td>
+                        <td>${getScore('Metaphysics')}</td>
+                        <td>${getScore('Epistemology')}</td>
+                        <td>${getScore('Psychology')}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                tableDiv.innerHTML = html;
+            } catch (error) {
+                document.getElementById('studentsTable').innerHTML = '<div class="no-data">Error loading students</div>';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            window.location.href = '/';
+        }
+
+        loadStudents();
+    </script>
+</body>
+</html>

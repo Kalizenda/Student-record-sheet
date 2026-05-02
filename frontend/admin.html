@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard</title>
+</head>
+<body>
+  <h2>Admin add Student</h2>
+  <input type="text" id="adminadd-name" placeholder="Student Name"><br><br>
+  <input type="text" id="adminadd-matric" placeholder="Matric Number"><br><br>
+  <input type="text" id="adminadd-level" placeholder="Level"><br><br>
+  <h3>Scores</h3>
+  <input type="number" id="adminadd-metaphysics" placeholder="Metaphysics"><br><br>
+  <input type="number" id="adminadd-epistemology" placeholder="Epistemology"><br><br>
+  <input type="number" id="adminadd-psychology" placeholder="Psychology"><br><br>
+  <button onclick="addStudent()">Submit</button>
+  <hr>
+  <h2>All Students</h2>
+  <button onclick="getStudents()">Load Students</button>
+  <ul id="studentsList"></ul>
+  <button onclick="logout()">Logout</button>
+  <script src="sendStudentData.js"></script>
+</body>
+</html>
