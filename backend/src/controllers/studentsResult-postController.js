@@ -20,14 +20,15 @@ import User from "../models/User.js";
         const studentResult = await studentsResult.findOneAndUpdate(
             { user: user._id },
             { $set: resultData },
-            { new: true, upsert: true }
+            { returnDocument: "after", upsert: true }
         );
         // Update user with result reference
         user.results = studentResult._id;
         await user.save();
         res.status(201).json({ message: "Student result created/updated successfully", studentResult });
     } catch (error) {
-        res.status(500).json({ message: "Internal server error", error });
+        console.error("CreateStudentsResult error:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
     }
 };
 

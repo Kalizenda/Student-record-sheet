@@ -21,6 +21,7 @@ const createUser = async (req, res) => {
 
         const user = await User.create({
             studentName,
+            username: matricNumber,
             matricNumber,
             password: "tempPassword123"
         });
